@@ -40,6 +40,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--db-user", required=True)
     parser.add_argument("--db-password", required=True)
     parser.add_argument("--db-name", required=True)
+
+    parser.add_argument(
+        "--fd",
+        type=int,
+        default=None,
+        help="File descriptor від systemd socket activation"
+    )
+
     return parser.parse_args()
 
 
@@ -55,7 +63,11 @@ def main() -> None:
     )
 
     app = create_app()
-    uvicorn.run(app, host=args.host, port=args.port)
+
+    if args.fd is not None:
+        uvicorn.run(app, fd=args.fd)
+    else:
+        uvicorn.run(app, host=args.host, port=args.port)
 
 if __name__ == "__main__":
     main()
