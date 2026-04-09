@@ -1,0 +1,14 @@
+[project]
+name = "mywebapp"
+version = "0.1.0"
+description = "Simple Inventory Service"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "mysql-connector-python>=9.0.0",
+]
+
+[project.scripts]
+mywebapp = "app.main:main"
+migrate = "migrate:main"
