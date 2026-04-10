@@ -1,0 +1,35 @@
+[Unit]
+Description=mywebapp Simple Inventory Service
+After=mariadb.service
+Requires=mariadb.service
+
+[Service]
+Type=simple
+User=mywebapp
+Group=mywebapp
+WorkingDirectory=/opt/mywebapp
+
+EnvironmentFile=/etc/mywebapp/env
+
+ExecStartPre=/usr/local/bin/uv run python migrate.py \
+    --db-host ${DB_HOST} \
+    --db-port ${DB_PORT} \
+    --db-user ${DB_USER} \
+    --db-password ${DB_PASSWORD} \
+    --db-name ${DB_NAME}
+
+ExecStart=/usr/local/bin/uv run python -m app.main \
+    --fd 3 \
+    --db-host ${DB_HOST} \
+    --db-port ${DB_PORT} \
+    --db-user ${DB_USER} \
+    --db-password ${DB_PASSWORD} \
+    --db-name ${DB_NAME}
+
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

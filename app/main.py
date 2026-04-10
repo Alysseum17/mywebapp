@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
         "--fd",
         type=int,
         default=None,
-        help="File descriptor від systemd socket activation"
+        help="File descriptor from systemd socket activation"
     )
 
     return parser.parse_args()
