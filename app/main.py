@@ -21,9 +21,9 @@ def create_app() -> FastAPI:
             <h1>mywebapp — Simple Inventory</h1>
             <h2>Endpoints:</h2>
             <ul>
-                <li>GET /items — список всіх предметів</li>
-                <li>POST /items — створити предмет</li>
-                <li>GET /items/{id} — деталі предмету</li>
+                <li>GET /items — list of all items</li>
+                <li>POST /items — create item</li>
+                <li>GET /items/{id} — item details</li>
             </ul>
         </body></html>
         """
