@@ -34,6 +34,8 @@ V5 = (20 % 5) + 1 = 0 + 1 = 1
 
 ## System Architecture
 
+### Classic deployment (VM + systemd)
+
 ```
 client → nginx (0.0.0.0:80) → mywebapp (127.0.0.1:8080) → MariaDB (127.0.0.1:3306)
 ```
@@ -41,6 +43,16 @@ client → nginx (0.0.0.0:80) → mywebapp (127.0.0.1:8080) → MariaDB (127.0.0
 All components are deployed on a single Linux virtual machine.  
 The database and application are accessible **only locally** (127.0.0.1).  
 Clients interact with the system exclusively through nginx on port 80.
+
+### Docker deployment
+
+```
+client → nginx:80 → webapp:8080 → db:3306
+           (mywebapp-net — isolated bridge network)
+```
+
+All three services run in separate containers inside an isolated Docker network.  
+Only nginx is exposed externally on port 80. The webapp and db are not reachable from outside.
 
 ---
 
@@ -57,16 +69,19 @@ mywebapp/
 │       ├── health.py      # GET /health/alive, GET /health/ready
 │       └── items.py       # GET /items, POST /items, GET /items/{id}
 ├── deploy/
-│   ├── install.sh         # Main automation script
+│   ├── install.sh         # Automation script for VM deployment
+│   ├── init.sql           # DB schema for Docker deployment
+│   ├── nginx.conf         # nginx config for Docker deployment
+│   ├── mywebapp.nginx     # nginx config for VM deployment
 │   ├── mywebapp.service   # systemd service unit
 │   ├── mywebapp.socket    # systemd socket unit (socket activation)
-│   ├── mywebapp.nginx     # nginx configuration
 │   └── sudoers-operator   # sudo rules for operator user
-├── migrate.py             # Database migration script
+├── migrate.py             # Database migration script (VM deployment)
+├── Dockerfile             # Container image for webapp
+├── docker-compose.yml     # Multi-container setup
 ├── pyproject.toml         # Project dependencies (uv)
 └── README.md
 ```
-
 ---
 
 ## Web Application
@@ -190,7 +205,7 @@ uv run python migrate.py \
 
 ---
 
-## Deployment
+## VM Deployment (Lab Work #1)
 
 ### Base Virtual Machine Image
 
@@ -375,3 +390,106 @@ sudo systemctl status mariadb     # DENIED — sudo error
 cat /home/student/gradebook
 # 20
 ```
+
+---
+## Docker Deployment (Lab Work #2)
+
+### Requirements
+
+- [Docker](https://docs.docker.com/engine/install/) 24+
+- Docker Compose v2
+
+### Quick Start
+
+```bash
+git clone https://github.com/Alysseum17/mywebapp
+cd mywebapp
+
+sudo docker compose up --build
+```
+
+The first run will:
+1. Build the `webapp` image using `Dockerfile`
+2. Pull `mariadb:11` and `nginx:alpine` from Docker Hub
+3. Create the `mywebapp-net` bridge network
+4. Create the `db_data` named volume for persistent DB storage
+5. Run `deploy/init.sql` to create the `items` table (only on first start)
+6. Start all three services
+
+### Services
+
+| Service | Image | Exposed port | Role |
+|---|---|---|---|
+| `db` | `mariadb:11` | internal only | MariaDB database |
+| `webapp` | built from `Dockerfile` | internal only | FastAPI application |
+| `nginx` | `nginx:alpine` | `0.0.0.0:80` | Reverse proxy |
+
+### Testing
+
+```bash
+# Root page
+curl http://localhost/
+
+# Create an item
+curl -X POST http://localhost/items \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Laptop", "quantity": 5}'
+
+# List items
+curl http://localhost/items
+
+# Item details
+curl http://localhost/items/1
+
+# /health is blocked by nginx — expect 404
+curl http://localhost/health/alive
+
+# Check health from inside the network
+sudo docker compose exec webapp curl http://localhost:8080/health/alive
+sudo docker compose exec webapp curl http://localhost:8080/health/ready
+```
+
+### Persistent Data
+
+Database data is stored in the `db_data` named volume and survives:
+- `docker compose restart`
+- `docker compose down` + `docker compose up`
+- System reboots
+
+Data is removed **only** when explicitly running:
+```bash
+sudo docker compose down -v
+```
+
+### Useful Commands
+
+```bash
+# Start in background
+sudo docker compose up -d --build
+
+# View logs
+sudo docker compose logs -f
+sudo docker compose logs webapp
+sudo docker compose logs db
+
+# Check running containers
+sudo docker compose ps
+
+# Stop all services
+sudo docker compose down
+
+# Stop and remove volumes (deletes DB data)
+sudo docker compose down -v
+```
+
+### How It Works
+
+**Dockerfile** — builds the webapp image using `python:3.12-slim` as base. `uv` is installed by copying the binary from the official `ghcr.io/astral-sh/uv:latest` image. Dependencies are installed before copying application code so that the dependency layer is cached separately.
+
+**Isolated network** — all services communicate inside `mywebapp-net`. Docker DNS resolves service names (`db`, `webapp`) to container IPs automatically. The webapp connects to MariaDB using `--db-host db`.
+
+**Startup order** — `db` has a healthcheck that confirms MariaDB is fully initialized. `webapp` starts only after `db` passes the healthcheck (`depends_on: condition: service_healthy`), preventing connection errors on startup.
+
+**DB initialization** — `deploy/init.sql` is mounted into `/docker-entrypoint-initdb.d/`. MariaDB runs it automatically on first start when the volume is empty.
+
+---
