@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import mysql.connector
 from mysql.connector import pooling
 
 _pool: pooling.MySQLConnectionPool | None = None

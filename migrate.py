@@ -34,18 +34,19 @@ def main() -> None:
         )
     """)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(1) FROM information_schema.statistics
         WHERE table_schema = %s
           AND table_name = 'items'
           AND index_name = 'idx_items_name'
-    """, (args.db_name,))
+    """,
+        (args.db_name,),
+    )
 
     (exists,) = cursor.fetchone()
     if not exists:
-        cursor.execute(
-            "CREATE INDEX idx_items_name ON items(name)"
-        )
+        cursor.execute("CREATE INDEX idx_items_name ON items(name)")
 
     conn.commit()
     cursor.close()

@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
         "--fd",
         type=int,
         default=None,
-        help="File descriptor from systemd socket activation"
+        help="File descriptor from systemd socket activation",
     )
 
     return parser.parse_args()
@@ -68,6 +68,7 @@ def main() -> None:
         uvicorn.run(app, fd=args.fd)
     else:
         uvicorn.run(app, host=args.host, port=args.port)
+
 
 if __name__ == "__main__":
     main()

@@ -28,8 +28,7 @@ def list_items(request: Request):
 
     if wants_html(request):
         rows_html = "".join(
-            f"<tr><td>{r['id']}</td><td>{r['name']}</td></tr>"
-            for r in rows
+            f"<tr><td>{r['id']}</td><td>{r['name']}</td></tr>" for r in rows
         )
         return HTMLResponse(f"""
         <html><body>
@@ -57,7 +56,7 @@ def create_item(body: ItemCreate):
     cursor.close()
     conn.close()
 
-    return JSONResponse({"id": new_id, "name": body.name, "quantity": body.quantity})
+    return JSONResponse({"id": new_id, "name": body.name, "quantity": body.quantity}, status_code=201)
 
 
 @router.get("/{item_id}")
@@ -77,12 +76,12 @@ def get_item(item_id: int, request: Request):
     if wants_html(request):
         return HTMLResponse(f"""
         <html><body>
-            <h1>Item #{row['id']}</h1>
+            <h1>Item #{row["id"]}</h1>
             <table border="1" cellpadding="6">
-                <tr><th>ID</th><td>{row['id']}</td></tr>
-                <tr><th>Name</th><td>{row['name']}</td></tr>
-                <tr><th>Quantity</th><td>{row['quantity']}</td></tr>
-                <tr><th>Created At</th><td>{row['created_at']}</td></tr>
+                <tr><th>ID</th><td>{row["id"]}</td></tr>
+                <tr><th>Name</th><td>{row["name"]}</td></tr>
+                <tr><th>Quantity</th><td>{row["quantity"]}</td></tr>
+                <tr><th>Created At</th><td>{row["created_at"]}</td></tr>
             </table>
         </body></html>
         """)
