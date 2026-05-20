@@ -53,21 +53,17 @@ create_user() {
         return
     fi
 
-    local group_args=()
+    local group_arg=""
     if getent group "$username" &>/dev/null; then
-        group_args=(-g "$username")
+        group_arg="-g $username"
     fi
 
-    if [[ "$is_system" == "true" ]]; then
-        useradd -r -s /usr/sbin/nologin -d "$APP_DIR" "${group_args[@]}" "$username"
+    if [[ "$issystem" == "true" ]]; then
+        useradd -r -s /usr/sbin/nologin -d "$APP_DIR" $group_arg "$username"
         log "System user $username created"
     else
-        useradd -m -s /bin/bash "${group_args[@]}" "$username"
-        echo "${username}:${DEFAULT_PASSWORD}" | chpasswd
-        chage -d 0 "$username"
-        log "User $username created (password: ${DEFAULT_PASSWORD}, change on login)"
-    fi
-}
+        useradd -m -s /bin/bash $group_arg "$username"
+ 
 
 create_user student
 usermod -aG sudo student
