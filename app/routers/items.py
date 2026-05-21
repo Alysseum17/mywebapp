@@ -27,9 +27,7 @@ def list_items(request: Request):
     conn.close()
 
     if wants_html(request):
-        rows_html = "".join(
-            f"<tr><td>{r['id']}</td><td>{r['name']}</td></tr>" for r in rows
-        )
+        rows_html = "".join(f"<tr><td>{r['id']}</td><td>{r['name']}</td></tr>" for r in rows)
         return HTMLResponse(f"""
         <html><body>
             <h1>Inventory</h1>
@@ -56,7 +54,9 @@ def create_item(body: ItemCreate):
     cursor.close()
     conn.close()
 
-    return JSONResponse({"id": new_id, "name": body.name, "quantity": body.quantity}, status_code=201)
+    return JSONResponse(
+        {"id": new_id, "name": body.name, "quantity": body.quantity}, status_code=201
+    )
 
 
 @router.get("/{item_id}")
