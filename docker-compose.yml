@@ -5,10 +5,10 @@ services:
     image: mariadb:11
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: mywebapp
-      MYSQL_USER: mywebapp
-      MYSQL_PASSWORD: securepass123
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
       - ./deploy/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -23,6 +23,14 @@ services:
   webapp:
     build: .
     restart: unless-stopped
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
     networks:
       - mywebapp-net
     depends_on:

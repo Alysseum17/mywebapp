@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -33,13 +34,13 @@ def create_app() -> FastAPI:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="mywebapp Simple Inventory")
-    parser.add_argument("--host", default="127.0.0.1", help="App host")
-    parser.add_argument("--port", type=int, default=8080, help="App port")
-    parser.add_argument("--db-host", default="127.0.0.1")
-    parser.add_argument("--db-port", type=int, default=3306)
-    parser.add_argument("--db-user", required=True)
-    parser.add_argument("--db-password", required=True)
-    parser.add_argument("--db-name", required=True)
+    parser.add_argument("--host", default=os.getenv("APP_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.getenv("APP_PORT", "8080")))
+    parser.add_argument("--db-host", default=os.getenv("DB_HOST", "127.0.0.1"))
+    parser.add_argument("--db-port", type=int, default=int(os.getenv("DB_PORT", "3306")))
+    parser.add_argument("--db-user", default=os.getenv("DB_USER"))
+    parser.add_argument("--db-password", default=os.getenv("DB_PASSWORD"))
+    parser.add_argument("--db-name", default=os.getenv("DB_NAME"))
 
     parser.add_argument(
         "--fd",
@@ -48,7 +49,19 @@ def parse_args() -> argparse.Namespace:
         help="File descriptor from systemd socket activation",
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    missing = []
+    if not args.db_user:
+        missing.append("--db-user / DB_USER")
+    if not args.db_password:
+        missing.append("--db-password / DB_PASSWORD")
+    if not args.db_name:
+        missing.append("--db-name / DB_NAME")
+    if missing:
+        parser.error(f"Missing required: {', '.join(missing)}")
+
+    return args
 
 
 def main() -> None:
