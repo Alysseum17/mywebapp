@@ -48,4 +48,19 @@ echo "[+] Installing runner OS dependencies..."
 "${RUNNER_DIR}/bin/installdependencies.sh"
 
 echo "[+] Runner software is successfully extracted to ${RUNNER_DIR}"
-echo "[!] Next step: Proceed to GitHub Settings -> Actions -> Runners to configure and register the runner manually."
+
+cat <<EOF
+
+ [!] Runner software is ready in ${RUNNER_DIR}
+
+ 1. Proceed to GitHub Settings -> Actions -> Runners -> Add runner and select Linux x64."
+ 2. Copy the registration token shown on that page.
+ 3. Configure as the runner user:
+
+     sudo -u ${RUNNER_USER} bash -c 'cd ${RUNNER_DIR} && ./config.sh --url https://github.com/<OWNER>/<REPO> --token <TOKEN> --labels self-hosted,deploy --unattended'
+
+ 4. Start the runner:
+
+      sudo -u ${RUNNER_USER} bash -c 'cd ${RUNNER_DIR} && ./run.sh'
+
+EOF
